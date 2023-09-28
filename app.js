@@ -62,26 +62,18 @@ app.get("/blog", async (req, res) => {
   res.status(200).json(blogs);
 });
 // 1. create an endpoint to publish a blog - (make sure its the user that created the blog that pubslishes it)
-app.post("/publish/:userId", async (req, res) => {
-  const{userId}=req.params
-  const { title, content } = req.body
-  const isUser = await db.blog.findFirst({ where: { id: +userId } })
+app.patch("/publish/:blogId", async (req, res) => {
+  const{blogId}=req.params
+ // const { title, content } = req.body
+  const isUser = await db.blog.findFirst({ where: { id: +blogId } })
   if (!isUser) {
     res.status(404).json("no user is found with this id")
   }
-  const isPublished = await db.blog.create({
-    data: {
-      title,
-      content,
-      isPublished: true,
-      user: {
-        connect: {
-          id:+userId
-        }
-      }
-    }
+  const isPublished = await db.blog.update({
+    where: { id: +blogId },
+    data:{isPublished:true}
   })
-  res.status(200).json("blog is published")
+  res.status(200).json(isPublished)
 })
 app.get("/publishedBlog", async (req, res) => {
   const getPublishedblog = await db.blog.findMany({
@@ -178,13 +170,6 @@ app.delete("/blog/:blogId/comment/:userId/:commentId", async (req, res) => {
   res.status(200).json(deletecomment)
 })
 
-   
-
-// Ass
-
-// 2. 
-// 3.
-// 4. Fetch only published blogs
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
