@@ -55,17 +55,21 @@ app.get("/blog", async (req, res) => {
           user: true,
         },
       },
-      comment: true,
+      comment: {
+        include: {
+          user: true
+       
+        }
+      }
     },
   });
 
   res.status(200).json(blogs);
 });
 // 1. create an endpoint to publish a blog - (make sure its the user that created the blog that pubslishes it)
-app.patch("/publish/:blogId", async (req, res) => {
-  const{blogId}=req.params
- // const { title, content } = req.body
-  const isUser = await db.blog.findFirst({ where: { id: +blogId } })
+app.patch("/publish/:blogId/:userId", async (req, res) => {
+  const{blogId,userId}=req.params
+  const isUser = await db.blog.findFirst({ where: { id: +userId } })
   if (!isUser) {
     res.status(404).json("no user is found with this id")
   }
@@ -75,7 +79,8 @@ app.patch("/publish/:blogId", async (req, res) => {
   })
   res.status(200).json(isPublished)
 })
-app.get("/publishedBlog", async (req, res) => {
+//get many published blog 
+app.get("/publishedblog", async (req, res) => {
   const getPublishedblog = await db.blog.findMany({
     where: {
       isPublished:true
@@ -84,11 +89,30 @@ app.get("/publishedBlog", async (req, res) => {
   res.status(200).json(getPublishedblog)
 })
 
+// get one user published blog
+app.get("/uniqueblog/:userId", async (req, res) => {
+  const {userId}=req.params
+  const getblog = await db.user.findUnique({
+    where: {
+      id: +userId
+    },
+    include: {
+      blog: {
+        where: {
+          isPublished:true
+        }
+      }
+    }
+  
+  })
+  res.status(200).json(getblog)
+})
+// endpoint to like a blog
 app.post("/blog/:blogId/like/:userId", async (req, res) => {
   const { blogId, userId } = req.params;
 
   const likedBefore = await db.like.findFirst({
-    where: { AND: [{ blogId: +blogId }, { userId: +userId }] },
+    where: { AND: [{ blogId: +blogId }, { userId: +userId }] }
   });
 
   if (likedBefore)
@@ -113,6 +137,7 @@ app.post("/blog/:blogId/like/:userId", async (req, res) => {
 
   res.status(201).json(like);
 });
+
  //2. create endpoint for a user to comment on a blog
 app.post("/blog/:blogId/comment/:userId", async (req, res) => {
   //const { content } = req.body
@@ -139,17 +164,24 @@ app.post("/blog/:blogId/comment/:userId", async (req, res) => {
 
  //3 Create an enpoint for user to unlike
 app.delete("/blog/:blogId/like/:userId/:likeId", async (req, res) => {
-  const { blogId, userId,likeId} = req.params
-  const findlike = await db.like.findFirst({ where: { AND: [{ blogId: +blogId, userId: +userId }] } })
+  try {
+  const { blogId, userId, likeId } = req.params;
+  const findlike = await db.like.findFirst({
+    where: { AND: [{ blogId: +blogId, userId: +userId }] },
+  });
   if (!findlike) {
-    res.status(404).json("not found")
+    res.status(404).json("not found");
   }
-  const deleteLike = await db.like.delete({
+
+    const deleteLike = await db.like.delete({
     where: {
-      id:+likeId
+      id: +likeId,
     }
   })
-  res.status(200).json("unlike")
+    res.status(200).json("unlike")
+  } catch (error) {
+    res.status(404).json("not found")
+  }
 })
 
 // 2b. create an endpoint to delete his/her comment
