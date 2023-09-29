@@ -62,10 +62,10 @@ app.get("/blog", async (req, res) => {
 });
 
 // 1. create an endpoint to publish a blog - (make sure its the user that created the blog that pubslishes it)
-app.patch("/publish/:blogId", async (req, res) => {
+app.patch("/publish/:blogId/:userId", async (req, res) => {
   const{blogId}=req.params
  // const { title, content } = req.body
-  const isUser = await db.blog.findFirst({ where: { id: +blogId } })
+  const isUser = await db.blog.findFirst({ where: { id: +userId } })
   if (!isUser) {
     res.status(404).json("no user is found with this id");
   }
