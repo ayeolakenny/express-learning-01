@@ -1,8 +1,11 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const bodyParser = require("body-parser");
+const bcrypt =require("bcryptjs")
 
 const db = require("./config/db");
+const jwt = require("jsonwebtoken")
+const isAuthenticated=require("./middleware/auth")
 const app = express();
 const port = process.env.PORT || 4000;
 
@@ -21,13 +24,35 @@ app.use(bodyParser.json());
 
 app.post("/user", async (req, res) => {
   //const { name, email } = req.body
+  const { name, email, password } = req.body
+  const salt = await bcrypt.genSalt(10)
+  const hashedPassword = await bcrypt.hash(password, salt)
+  const createUser ={name,email,password:hashedPassword}
   const newUser = await db.user.create({
-    data: { ...req.body },
+    data: { ...createUser },
   });
   res.status(201).json({ user: newUser });
 });
 
-app.post("/blog/:userId", async (req, res) => {
+app.post("/user/login", async (req, res) => {
+  const { email, password } = req.body
+  // const username = req.body.name
+  // const user ={name:username}
+  if (!email || !password) {
+    res.status(200).json("please proivide your email and password")
+  }
+  const user = await db.user.findUnique({
+    where: {
+      email:req.body.email
+    }
+  })
+  //compare 
+  const isMatch =await bcrypt.compare(password,user.password)
+  const token = jwt.sign({_id:user._id}, process.env.JWT_SECRET, { expiresIn: "3d" })
+  res.status(200).json({token:token,name:isMatch.name})
+})
+
+app.post("/blog/:userId",isAuthenticated, async (req, res) => {
   const { title, content } = req.body;
   const { userId } = req.params;
   const newBlog = await db.blog.create({

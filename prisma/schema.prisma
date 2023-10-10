@@ -16,6 +16,7 @@ model User {
   email     String    @unique
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  password  String
   blog      Blog[]
   like      Like[]
   comment   Comment[]
@@ -30,6 +31,7 @@ model Blog {
   userId      Int
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  
   like        Like[]
   comment     Comment[]
 }

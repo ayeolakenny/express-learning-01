@@ -22,4 +22,5 @@ TODOS
 
 NOTES
 1. req.body (takes data passed to the body of the endpoint)
-2. req.params (takes parameters passed to the endpoint)
+2. req.params (takes parameters passed to the endpoint)> 
+require("crypto").randomBytes(64).toString("hex") to get jwt secret token
